@@ -6,7 +6,7 @@ import requests
 
 class PR:
 	# assign null values for initialization
-	def __init__(self)
+	def __init__(self):
 		self.id = 0
 		self.commit = ''
 		self.content = ''
