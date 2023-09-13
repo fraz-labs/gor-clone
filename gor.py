@@ -7,7 +7,11 @@ import requests
 
 # authorization for posting comments/retrieving
 # data from private repo
-github_auth_token = os.getenv('GITHUB_AUTH_TOKEN')
+try:
+	GITHUB_AUTH_TOKEN = os.environ('GITHUB_AUTH_TOKEN')
+except KeyError:
+	print('Github auth token not found')
+	sys.exit(1)
 
 # sample repo for testing (private)
 pr_base_url = '  https://api.github.com/repos/waymobetta/gor'
