@@ -8,7 +8,7 @@ import requests
 # authorization for posting comments/retrieving
 # data from private repo
 try:
-	GITHUB_AUTH_TOKEN = os.environ('GITHUB_AUTH_TOKEN')
+	GITHUB_AUTH_TOKEN = os.environ('GH_AUTH_TOKEN')
 except KeyError:
 	print('Github auth token not found')
 	sys.exit(1)
@@ -225,7 +225,7 @@ gno.land
 		    'Content-Type': 'application/x-www-form-urlencoded',
 		}
 
-		headers['Authorization'] = f'Bearer {github_auth_token}'
+		headers['Authorization'] = f'Bearer {GITHUB_AUTH_TOKEN}'
 
 		# comment body
 		payload = {'body':''}
@@ -252,7 +252,7 @@ gno.land
 			'X-GitHub-Api-Version': '2022-11-28',
 		}
 
-		headers['Authorization'] = f'Bearer {github_auth_token}'
+		headers['Authorization'] = f'Bearer {GITHUB_AUTH_TOKEN}'
 
 		pr_url = f'{pr_base_url}/pulls/{self.id}'
 
