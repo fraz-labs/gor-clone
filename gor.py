@@ -23,6 +23,10 @@ class PR:
 		self.author = ''
 		self.evaluation = ''
 		self.is_rewarded = False
+		self.commits = 0
+		self.changed_files = 0
+		self.additions = 0
+		self.deletions = 0
 
 	def set_id(self, id):
 		self.id = id
@@ -41,6 +45,18 @@ class PR:
 
 	def set_is_rewarded(self, is_rewarded):
 		self.is_rewarded = is_rewarded
+
+	def set_commits(self, commits):
+		self.commits = commits
+
+	def set_changed_files(self, changed_files):
+		self.changed_files = changed_files
+
+	def set_additions(self, additions):
+		self.additions = additions
+
+	def set_deletions(self, deletions):
+		self.deletions = deletions
 
 	# getters
 
@@ -61,6 +77,18 @@ class PR:
 
 	def is_rewarded(self):
 		return self.is_rewarded
+
+	def commits(self):
+		return self.commits
+
+	def changed_files(self):
+		return self.changed_files
+
+	def additions(self):
+		return self.additions
+
+	def deletions(self):
+		return self.deletions
 
 	# sanitizes and prepares data that was previously 
 	# fetched via fetch()
