@@ -27,5 +27,6 @@ jobs:
       - name: execute
         env: 
           GH_AUTH_TOKEN: ${{ secrets.GH_AUTH_TOKEN }}
+          PR_ID: ${{ github.event.number }}
         run: |
           python gor.py

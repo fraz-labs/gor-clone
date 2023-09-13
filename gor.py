@@ -13,6 +13,13 @@ except KeyError:
 	print('Github auth token not found')
 	sys.exit(1)
 
+# obtain PR number from action variable
+try:
+	PR_ID = os.environ['PR_ID']
+except KeyError:
+	print('Could not get PR ID')
+	sys.exit(1)
+
 # sample repo for testing (private)
 pr_base_url = '  https://api.github.com/repos/waymobetta/gor'
 
@@ -376,7 +383,9 @@ if __name__ == '__main__':
 
 	# instantiate new PR object
 	pr = PR()
-	pr.set_id(id)
+	
+	# pulled from Github Actions (workflow/actions.yml)
+	pr.set_id(PR_ID)
 	pr.set_category(category)
 	pr.set_sub_category(sub_category)
 
