@@ -288,7 +288,7 @@ def write_to_file(data):
     f.close()
 
 def construct_gor_id(id):
-	return f'[gno/gor//{id}]'
+	return f'[gno/gor:{id}]'
 
 def math_things(additions, deletions, commits, changed_files, category, sub_category):
 	# contribution total
