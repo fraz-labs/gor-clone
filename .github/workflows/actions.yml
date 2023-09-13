@@ -2,8 +2,10 @@ name: gor.py
 
 on: 
   pull_request:
+    types:
+      opened
     branches:
-      - main
+      main
 
 jobs:
   build:
