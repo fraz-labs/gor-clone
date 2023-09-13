@@ -8,7 +8,7 @@ import requests
 # authorization for posting comments/retrieving
 # data from private repo
 try:
-	GITHUB_AUTH_TOKEN = os.environ('GH_AUTH_TOKEN')
+	GITHUB_AUTH_TOKEN = os.environ['GH_AUTH_TOKEN']
 except KeyError:
 	print('Github auth token not found')
 	sys.exit(1)
