@@ -5,7 +5,7 @@ Table of Contents:
 - [Flow](#flow)
 
 #### Thought Process
-@MichaelFrazzy and I have been in discussions about how we can progress the scoring of contributions. As a very early and initial version, we’ve put together a basic script that pulls certain information from a contributor’s PR, does some basic analysis/calculation on this, and then posts back to the PR thread with a rough score, in a way creating a very rudimentary initial scoring flow.
+[MichaelFrazzy](https://github.com/MichaelFrazzy) and I have been in discussions about how we can progress the scoring of contributions. As a very early and initial version, we’ve put together a basic script that pulls certain information from a contributor’s PR, does some basic analysis/calculation on this, and then posts back to the PR thread with a rough score, in a way creating a very rudimentary initial scoring flow.
 
 We see this as a beta example of what the flow could look like for fixed criteria scoring, then evaluation DAO would come in and perform more significant reviewal which would serve to multiply a contributor’s base score further. Of course, all of the values that we used within the script for calculating score can and should be changed (+ votable), though we’ve hardcoded a few values just to provide an example of what this could look like in basic, full-form.
 
