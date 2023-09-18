@@ -364,11 +364,6 @@ def additions_deletions(additions, deletions, is_max):
     return adds_dels
 
 if __name__ == '__main__':
-    # test data
-    id = 1
-    category = 'dao'
-    sub_category = 'improvement'
-
     # instantiate new PR object
     pr = PR()
 
