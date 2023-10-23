@@ -15,7 +15,7 @@ except KeyError:
 
 # obtain PR number from action variable
 try:
-    PR_ID = 1
+    PR_ID = 5
 except KeyError:
     print('Could not get PR ID')
     sys.exit(1)
@@ -171,7 +171,7 @@ class PR:
         summary = f'''
 Greetings, Game of Realms Contributor, {self.get_author()}! 
 
-Your contribution has been evaluated. The following are your results:
+Your contribution has been given a preliminary score. The final score will be determined after manual review by Evaluation DAO, with this serving as a rough estimate. The following are your results:
 
 ###### ID: {gor_id}
 
