@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
-
 import os
 import sys
 import json
 import requests
 import pandas as pd
+import datetime
+import base64
 
 # authorization for posting comments/retrieving data from private repo
 try:
@@ -15,7 +15,7 @@ except KeyError:
 
 # obtain PR number from action variable
 try:
-    PR_ID = 1
+    PR_ID = 5
 except KeyError:
     print('Could not get PR ID')
     sys.exit(1)
@@ -171,7 +171,7 @@ class PR:
         summary = f'''
 Greetings, Game of Realms Contributor, {self.get_author()}! 
 
-Your contribution has been evaluated. The following are your results:
+Your contribution has been given a preliminary score. The final score will be determined after manual review by Evaluation DAO, with this serving as a rough estimate. The following are your results:
 
 ###### ID: {gor_id}
 
@@ -209,7 +209,7 @@ Your contribution has been evaluated. The following are your results:
         reward_msg = f'''
 Greetings, Game of Realms Contributor, {self.author}!
 
-You have been successfully rewarded through our Proof of Contribution mechanism- check your wallet!
+You have successfully submitted a contribution through our Proof of Contribution mechanism. After a manual review over the next week, a point value will be assigned to your submission.
 
 Thank you for playing the Game of Realms!
 
@@ -291,11 +291,11 @@ def math_things(additions, deletions, commits, changed_files, category, sub_cate
     # calculate max total for the category
     max_total = 0
 
-    # Calculate effective code changes (excluding blank lines) and average characters per line
+    # Calculate total code changes (excluding blank lines) and average characters per line
     total_effective = additions + deletions - content.count('\n\n')
     avg_chars_per_line = len(content) / content.count('\n') if content.count('\n') != 0 else 0
 
-    # Check the thresholds for the newly added metrics and add to max_total
+    # Check the thresholds for the new metrics and add to max_total
     if total_effective >= thresholds['additions_and_deletions_combined']['limit']:
         total += thresholds['additions_and_deletions_combined']['weight']
     max_total += thresholds['additions_and_deletions_combined']['weight']
@@ -314,7 +314,7 @@ def math_things(additions, deletions, commits, changed_files, category, sub_cate
         case 'core':
             total += categories['core']
             max_total += categories['core']
-        # default
+        # default, change later
         case _:
             total += 0
             max_total += 0
@@ -346,6 +346,44 @@ def math_things(additions, deletions, commits, changed_files, category, sub_cate
 
     return total, max_total, total_effective, avg_chars_per_line
 
+def fetch_contributions_file(pr_author):
+    contributions_url = f'{pr_base_url}/contents/CONTRIBUTIONS.md'
+    headers = {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': f'Bearer {os.environ["GH_AUTH_TOKEN"]}'
+    }
+    resp = requests.get(contributions_url, headers=headers)
+    if resp.status_code == 200:
+        content = base64.b64decode(resp.json()['content']).decode('utf-8')
+        sha = resp.json()['sha']
+        
+        # Calculate sequential ID based on lines starting with [
+        sequential_number = len([line for line in content.split("\n") if line.strip().startswith("[")]) + 1
+        
+        return content, sha, sequential_number
+    elif resp.status_code == 404:
+        return '', None, 0
+    else:
+        print(f"Failed to fetch CONTRIBUTIONS.md with status code {resp.status_code}")
+        sys.exit(1)
+
+def update_contributions_file(content, sha):
+    contributions_url = f'{pr_base_url}/contents/CONTRIBUTIONS.md'
+    headers = {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': f'Bearer {os.environ["GH_AUTH_TOKEN"]}',
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        "message": "Update CONTRIBUTIONS.md",
+        "content": base64.b64encode(content.encode('utf-8')).decode('utf-8'),
+        "sha": sha
+    }
+    resp = requests.put(contributions_url, headers=headers, data=json.dumps(payload))
+    if resp.status_code not in [200, 201]:
+        print(f"Failed to update CONTRIBUTIONS.md with status code {resp.status_code}")
+        sys.exit(1)
+
 
 def additions_deletions(additions, deletions, is_max):
     adds_dels = 0
@@ -364,6 +402,11 @@ def additions_deletions(additions, deletions, is_max):
     return adds_dels
 
 if __name__ == '__main__':
+    # test data
+    id = 1
+    category = 'dao'
+    sub_category = 'improvement'
+
     # instantiate new PR object
     pr = PR()
 
@@ -381,6 +424,26 @@ if __name__ == '__main__':
     print(f'[+] evaluating PR: {pr.get_id()}')
     pr.eval()
     print('[*] successfully evaluated PR\n')
+    
+        # Fetch the content of CONTRIBUTIONS.md
+    current_content, current_sha, sequential_number = fetch_contributions_file(pr.get_author())
+
+
+    # Create the new log
+    total_effective = pr.get_additions() + pr.get_deletions()  # Sum of additions and deletions
+    avg_chars_per_line = (len(pr.get_content()) / pr.get_content().count('\n')) if pr.get_content().count('\n') != 0 else 0  # Average characters per line
+    new_log = f"""
+[{pr.get_id()}|{sequential_number}] - {pr.get_author()} - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Evaluation metrics:
+- Average Characters Per Line: {avg_chars_per_line:.2f}
+- Additions: {pr.get_additions()}
+- Deletions: {pr.get_deletions()}
+- Total Line Changes: {total_effective}
+"""
+    new_content = current_content + new_log
+
+    # Update the CONTRIBUTIONS.md file
+    update_contributions_file(new_content, current_sha)
 
     # generate summary
     summary = pr.summary()
