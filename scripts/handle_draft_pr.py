@@ -1,5 +1,3 @@
-# 2nd Draft PR Version
-
 import os
 import requests
 import csv
