@@ -14,7 +14,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
     - name: Handle Draft PR
-      run: python .github/scripts/handle_draft_pr.py
+      run: python scripts/handle_draft_pr.py
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
