@@ -59,6 +59,19 @@ def main():
     # Fetch PR details
     pr_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
     pr_response = requests.get(pr_url, headers={"Authorization": f"token {os.environ['GITHUB_TOKEN']}"})
+
+    #Debugging
+
+    print(f"Status Code: {pr_response.status_code}")
+    print(f"Response: {pr_response.json()}")
+
+    # Recheck if the API call was successful
+    if pr_response.status_code != 200:
+        print(f"Failed to fetch PR data: {pr_response.status_code}")
+        print(pr_response.text)
+        return  # Exit if unsuccessful
+
+    
     pr_data = pr_response.json()
     user_name = pr_data['user']['login']
     pr_name = pr_data['title']
