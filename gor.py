@@ -8,7 +8,7 @@ import base64
 
 # authorization for posting comments/retrieving data from private repo
 try:
-    os.environ['GH_AUTH_TOKEN'] = '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'
+    os.environ['GH_AUTH_TOKEN'] = 'GENERATE_NEW'
 except KeyError:
     print('Github auth token not found')
     sys.exit(1)
