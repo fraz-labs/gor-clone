@@ -5,11 +5,11 @@ import datetime
 
 def fetch_pr_details(repo, pr_number):
     url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
-    response = requests.get(url, headers={"Authorization": f"token {os.environ['GITHUB_TOKEN']}"})
+    response = requests.get(url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
     return response.json()
 
 def count_lines_and_chars(pr_files_url):
-    response = requests.get(pr_files_url, headers={"Authorization": f"token {os.environ['GITHUB_TOKEN']}"})
+    response = requests.get(pr_files_url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
     files_data = response.json()
 
     total_lines = 0
@@ -31,7 +31,7 @@ def update_csv(user_name, repo, pr_details):
     csv_url = f"https://api.github.com/repos/{repo}/contents/{csv_file_path}"
 
     # Fetch existing CSV content
-    response = requests.get(csv_url, headers={"Authorization": f"token {os.environ['GITHUB_TOKEN']}"})
+    response = requests.get(csv_url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
     if response.status_code == 200:
         content = response.json()['content']
         decoded_csv = content.encode("utf-8").decode("utf-8")
@@ -62,7 +62,7 @@ def update_csv(user_name, repo, pr_details):
     }
     if response.status_code == 200:
         payload["sha"] = response.json()['sha']
-    requests.put(csv_url, json=payload, headers={"Authorization": f"token {os.environ['GITHUB_TOKEN']}"})
+    requests.put(csv_url, json=payload, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
 
 def main():
     repo = os.environ['REPO']
