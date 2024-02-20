@@ -8,7 +8,7 @@ def update_csv_on_merge(user_name, repo):
     csv_url = f"https://api.github.com/repos/{repo}/contents/{csv_file_path}"
 
     # Fetch existing CSV content
-    response = requests.get(csv_url, headers={"Authorization": f"token {os.environ['GITHUB_TOKEN']}"})
+    response = requests.get(csv_url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
     if response.status_code == 200:
         content = response.json()['content']
         decoded_csv = content.encode("utf-8").decode("utf-8")
@@ -28,7 +28,7 @@ def update_csv_on_merge(user_name, repo):
             "content": updated_csv.encode("utf-8").decode("utf-8"),
             "sha": response.json()['sha']
         }
-        requests.put(csv_url, json=payload, headers={"Authorization": f"token {os.environ['GITHUB_TOKEN']}"})
+        requests.put(csv_url, json=payload, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
     else:
         print(f"Error: CSV file not found for {user_name}")
 
