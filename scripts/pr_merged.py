@@ -2,42 +2,61 @@ import os
 import requests
 import csv
 import datetime
+import base64
 
-def update_csv_on_merge(user_name, repo):
-    csv_file_path = f"contributors/{user_name}/contributions.csv"
-    csv_url = f"https://api.github.com/repos/{repo}/contents/{csv_file_path}"
+def encode_content(content):
+    """Encode content to base64."""
+    return base64.b64encode(content.encode('utf-8')).decode('utf-8')
 
-    # Fetch existing CSV content
-    response = requests.get(csv_url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
+def get_csv_content(repo, path, token):
+    """Get existing CSV content or return headers for a new CSV."""
+    url = f"https://api.github.com/repos/{repo}/contents/{path}"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        content = response.json()['content']
-        decoded_csv = content.encode("utf-8").decode("utf-8")
-        csv_data = list(csv.reader(decoded_csv.splitlines()))
-
-        # Update the last entry with merge date
-        merge_date = datetime.datetime.now().strftime('%Y-%m-%d')
-        csv_data[-1][3] = merge_date  # Merge date
-        csv_data[-1][-1] = str(int(csv_data[-1][-1]) + 1) if csv_data[-1][-1] else "1"  # Increment merged PRs
-
-        # Convert back to CSV string
-        updated_csv = "\n".join([",".join(map(str, row)) for row in csv_data])
-
-        # Update CSV in the repository
-        payload = {
-            "message": f"Update {csv_file_path}",
-            "content": updated_csv.encode("utf-8").decode("utf-8"),
-            "sha": response.json()['sha']
-        }
-        requests.put(csv_url, json=payload, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
+        content = base64.b64decode(response.json()['content']).decode('utf-8')
+        return content.split('\n')
     else:
-        print(f"Error: CSV file not found for {user_name}")
+        # Return default CSV headers if file does not exist
+        return ["Draft Creation Date,PR Name,Submission Date,Merge Date,Total Lines - Blanks,Average Char per Line,Total Draft PRs,Total PRs Merged,PR Number,Repo Name"]
+
+def create_or_update_file(repo, path, content, token, message="Update file"):
+    """Create or update a file in the repository."""
+    url = f"https://api.github.com/repos/{repo}/contents/{path}"
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {"message": message, "content": encode_content(content)}
+    response = requests.get(url, headers=headers)  # Check if file exists
+    if response.status_code == 200:
+        data["sha"] = response.json()["sha"]  # If exists, update it
+    response = requests.put(url, json=data, headers=headers)
+    if response.status_code in [200, 201]:
+        print(f"Successfully created/updated the file: {path}")
+    else:
+        print(f"Failed to create/update the file: {response.json()}")
+
+def update_csv_on_merge(repo, user_name, token):
+    """Update CSV file when a PR is merged."""
+    csv_path = f"contributors/{user_name}/contributions.csv"
+    csv_lines = get_csv_content(repo, csv_path, token)
+    csv_reader = csv.reader(csv_lines)
+    csv_data = list(csv_reader)
+
+    # Update the last entry with the merge date
+    merge_date = datetime.datetime.now().strftime('%Y-%m-%d')
+    if csv_data:
+        csv_data[-1][3] = merge_date  # Merge date column
+
+    # Convert back to CSV string
+    updated_csv = "\n".join([",".join(row) for row in csv_data])
+    create_or_update_file(repo, csv_path, updated_csv, token, "Update contributions CSV on PR merge")
 
 def main():
+    """Main function to execute script logic."""
     repo = os.environ['REPO']
-    user_name = os.environ['USER_NAME']
+    user_name = os.environ.get('USER_NAME')  # USER_NAME needs to be set in your GitHub Actions workflow
+    token = os.environ['GH_TOKEN']
 
-    # Update CSV on PR merge
-    update_csv_on_merge(user_name, repo)
+    update_csv_on_merge(repo, user_name, token)
 
 if __name__ == "__main__":
     main()
