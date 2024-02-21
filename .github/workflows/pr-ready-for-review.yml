@@ -26,6 +26,6 @@ jobs:
     - name: Handle PR Ready for Review
       run: python scripts/pr_ready_for_review.py
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         REPO: ${{ github.repository }}
