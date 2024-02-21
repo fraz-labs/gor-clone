@@ -2,78 +2,73 @@ import os
 import requests
 import csv
 import datetime
+import base64
 
-def fetch_pr_details(repo, pr_number):
-    url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
-    response = requests.get(url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
-    return response.json()
+def encode_content(content):
+    """Encode content to base64."""
+    return base64.b64encode(content.encode('utf-8')).decode('utf-8')
 
-def count_lines_and_chars(pr_files_url):
-    response = requests.get(pr_files_url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
-    files_data = response.json()
-
-    total_lines = 0
-    total_chars = 0
-
-    for file in files_data:
-        if file['status'] != 'removed':
-            patch = file.get('patch', '')
-            lines = patch.split('\n')
-            lines = [line for line in lines if line.strip() and not line.startswith('@@')]
-            total_lines += len(lines)
-            total_chars += sum(len(line) for line in lines)
-
-    avg_chars_per_line = total_chars / total_lines if total_lines else 0
-    return total_lines, avg_chars_per_line
-
-def update_csv(user_name, repo, pr_details):
-    csv_file_path = f"contributors/{user_name}/contributions.csv"
-    csv_url = f"https://api.github.com/repos/{repo}/contents/{csv_file_path}"
-
-    # Fetch existing CSV content
-    response = requests.get(csv_url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
+def get_csv_content(repo, path, token):
+    """Get existing CSV content or return headers for a new CSV."""
+    url = f"https://api.github.com/repos/{repo}/contents/{path}"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        content = response.json()['content']
-        decoded_csv = content.encode("utf-8").decode("utf-8")
-        csv_data = list(csv.reader(decoded_csv.splitlines()))
+        content = base64.b64decode(response.json()['content']).decode('utf-8')
+        return content.split('\n')
     else:
-        # Initialize new CSV data if file doesn't exist
-        csv_data = [["Draft Creation Date", "PR Name", "Submission Date", "Merge Date", "Total Lines - Blanks", "Average Char per Line", "Total Draft PRs", "Total PRs Merged"]]
+        # Return default CSV headers if file does not exist
+        return ["Draft Creation Date,PR Name,Submission Date,Merge Date,Total Lines - Blanks,Average Char per Line,Total Draft PRs,Total PRs Merged,PR Number,Repo Name"]
 
-    # Update the last entry with new details
-    total_lines, avg_chars_per_line = count_lines_and_chars(pr_details['url'])
+def update_csv_on_ready_for_review(repo, user_name, pr_number, token):
+    csv_path = f"contributors/{user_name}/contributions.csv"
+    csv_lines = get_csv_content(repo, csv_path, token)
+    csv_reader = csv.reader(csv_lines)
+    csv_data = list(csv_reader)
+
+    # Fetch PR details
+    pr_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
+    pr_response = requests.get(pr_url, headers={"Authorization": f"Bearer {token}"})
+    if pr_response.status_code != 200:
+        print(f"Failed to fetch PR details for PR #{pr_number}")
+        return
+    pr_data = pr_response.json()
+
+    # Append or update data
     submission_date = datetime.datetime.now().strftime('%Y-%m-%d')
-
-    if csv_data[-1][0] == "":  # No draft date recorded, create new entry
-        csv_data.append(["", pr_details['title'], submission_date, "", total_lines, avg_chars_per_line, "", ""])
-    else:  # Update last entry
-        csv_data[-1][1] = pr_details['title']  # Update PR name if changed
-        csv_data[-1][2] = submission_date
-        csv_data[-1][4] = total_lines
-        csv_data[-1][5] = avg_chars_per_line
+    pr_name = pr_data['title']
+    pr_number = pr_data['number']
+    new_row = [submission_date, pr_name, "", "", "", "", "", "", pr_number, repo]
+    csv_data.append(new_row)
 
     # Convert back to CSV string
     updated_csv = "\n".join([",".join(map(str, row)) for row in csv_data])
 
-    # Update CSV in the repository
-    payload = {
-        "message": f"Update {csv_file_path}",
-        "content": updated_csv.encode("utf-8").decode("utf-8")
-    }
+    # Create or update the CSV file
+    content = encode_content(updated_csv)
+    create_or_update_file(repo, csv_path, content, token, "Update contributions CSV for PR ready for review")
+
+def create_or_update_file(repo, path, content, token, message="Update file"):
+    """Create or update a file in the repository."""
+    url = f"https://api.github.com/repos/{repo}/contents/{path}"
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {"message": message, "content": content}
+    response = requests.get(url, headers=headers)  # Check if file exists
     if response.status_code == 200:
-        payload["sha"] = response.json()['sha']
-    requests.put(csv_url, json=payload, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}"})
+        data["sha"] = response.json()["sha"]  # If exists, update it
+    response = requests.put(url, json=data, headers=headers)
+    if response.status_code in [200, 201]:
+        print(f"Successfully created/updated the file: {path}")
+    else:
+        print(f"Failed to create/update the file: {response.json()}")
 
 def main():
     repo = os.environ['REPO']
     pr_number = os.environ['PR_NUMBER']
+    token = os.environ['GH_TOKEN']
+    user_name = os.environ.get('USER_NAME')  # Adjust as needed to obtain the GitHub username
 
-    # Fetch PR details
-    pr_details = fetch_pr_details(repo, pr_number)
-    user_name = pr_details['user']['login']
-
-    # Update CSV with PR details
-    update_csv(user_name, repo, pr_details)
+    update_csv_on_ready_for_review(repo, user_name, pr_number, token)
 
 if __name__ == "__main__":
     main()
