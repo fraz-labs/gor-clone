@@ -27,6 +27,6 @@ jobs:
     - name: Handle Draft PR
       run: python scripts/handle_draft_pr.py
       env:
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         REPO: ${{ github.repository }}
