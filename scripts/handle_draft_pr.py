@@ -32,7 +32,7 @@ def update_csv(repo, user_name, pr_data, token):
     pr_name = pr_data['title']
     draft_date = datetime.datetime.now().strftime('%Y-%m-%d')
     pr_number = pr_data['number']
-    new_row = [draft_date, pr_name, "", "", "", "", "", "", pr_number, repo]
+    new_row = [draft_date, pr_name, "", "", "", "", "", "", str(pr_number), repo]
     csv_data.append(new_row)
 
     # Convert back to CSV string
@@ -97,8 +97,8 @@ def main():
         # Post a comment on the PR
         post_comment(repo, pr_number, "Thank you for your Game of Realms submission! It will be reviewed shortly.", token)
 
-        # Create user directory and initial files if not exist
-        create_user_directory_and_files(user_name, repo, token)
+        # Create user directory and initial files if they don't exist
+        create_user_directory_and_files(user_name, repo, token)  # Ensure this function is defined
 
         # Update or create CSV with the new PR data
         update_csv(repo, user_name, pr_data, token)
