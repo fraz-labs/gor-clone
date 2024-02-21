@@ -50,6 +50,37 @@ def post_comment(repo, pr_number, message, token):
     else:
         print(f"Failed to post comment: {response.json()}")
 
+def create_or_update_file(repo, path, content, token, message="Update file"):
+    """Create or update a file in the repository."""
+    url = f"https://api.github.com/repos/{repo}/contents/{path}"
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {
+        "message": message,
+        "content": encode_content(content),
+    }
+    # Try to get the file's current SHA to update; if not found, it will create a new file
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        data["sha"] = response.json()["sha"]
+
+    response = requests.put(url, json=data, headers=headers)
+    if response.status_code in [200, 201]:
+        print(f"Successfully created/updated the file: {path}")
+    else:
+        print(f"Failed to create/update the file: {response.json()}")
+
+def create_user_directory_and_files(user_name, repo, token):
+    """Create user directory and initial files if they don't exist."""
+    base_path = f"contributors/{user_name}"
+    file_paths = {
+        f"{base_path}/README.md": "This is your README. Update it as you see fit.",
+        f"{base_path}/notable-contributions.md": "List your notable contributions here.",
+        f"{base_path}/contributions.csv": "Draft Creation Date,PR Name,Submission Date,Merge Date,Total Lines - Blanks,Average Char per Line,Total Draft PRs,Total PRs Merged,PR Number,Repo Name"
+    }
+
+    for path, content in file_paths.items():
+        create_or_update_file(repo, path, content, token, f"Create {path.split('/')[-1]}")
+
 def main():
     token = os.environ['GH_TOKEN']
     repo = os.environ['REPO']
