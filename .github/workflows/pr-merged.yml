@@ -25,7 +25,7 @@ jobs:
         pip install -r requirements.txt
       
     - name: Handle Merged PR
-      run: python .github/scripts/handle_pr_merged.py
+      run: python scripts/pr_merged.py
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
